@@ -16,10 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author pyj
@@ -55,8 +52,8 @@ public class TestController {
         map.put("nrOfHolidays", days);
         map.put("description", reason);
 
-        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("holidayRequest", map);
-        return "提交成功,流程ID为：" + processInstance.getId();
+        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("holidayRequest" + days, map);
+        return "提交成功,流程ID为：" + processInstance.getId() + "\n" + listall();
     }
 
     /**
@@ -68,6 +65,11 @@ public class TestController {
     @GetMapping("list")
     public Object list(String group) {
         List<Task> tasks = taskService.createTaskQuery().taskCandidateGroup(group).list();
+        return tasks.toString();
+    }
+    @GetMapping("listall")
+    public Object listall() {
+        List<Task> tasks = taskService.createTaskQuery().list();
         return tasks.toString();
     }
 
@@ -87,8 +89,9 @@ public class TestController {
         Map<String, Object> variables = new HashMap<>();
         Boolean apply = approved.equals("1") ? true : false;
         variables.put("approved", apply);
+        variables.put("assigneeList", Arrays.asList("aaa","bbb","ccc"));
         taskService.complete(taskId, variables);
-        return "审批是否通过：" + approved;
+        return "审批是否通过：" + approved + "\n" + listall();
 
     }
 
@@ -121,8 +124,6 @@ public class TestController {
         }
         List<String> key = new ArrayList<>();
         key.add(currentTask.getTaskDefinitionKey());
-
-
         runtimeService.createChangeActivityStateBuilder()
                 .processInstanceId(currentTask.getProcessInstanceId())
                 .moveActivityIdsToSingleActivityId(key, targetTaskKey)
@@ -231,10 +232,10 @@ public class TestController {
         }
         Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).singleResult();
         //使用流程实例ID，查询正在执行的执行对象表，返回流程实例对象
-        String InstanceId = task.getProcessInstanceId();
+//        String InstanceId = task.getProcessInstanceId();
         List<Execution> executions = runtimeService
                 .createExecutionQuery()
-                .processInstanceId(InstanceId)
+                .processInstanceId(pi.getId())
                 .list();
 
         //得到正在执行的Activity的Id
